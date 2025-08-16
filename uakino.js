@@ -1,12 +1,11 @@
 (function(){
     'use strict';
 
-    // назва джерела
     var plugin_name = 'Uakino';
 
     function startPlugin(){
         Lampa.Api.add(plugin_name, {
-            // пошук фільмів
+            // Пошук фільмів
             search: function(query, call){
                 fetch('https://uakino.club/index.php?do=search&subaction=search&story=' + encodeURIComponent(query))
                     .then(r => r.text())
@@ -19,13 +18,15 @@
                             let link  = el.querySelector('.th-title a')?.href;
                             let img   = el.querySelector('img')?.src;
 
-                            items.push({
-                                title: title,
-                                url: link,
-                                poster: img,
-                                type: 'movie',
-                                plugin: plugin_name
-                            });
+                            if(title && link){
+                                items.push({
+                                    title: title,
+                                    url: link,
+                                    poster: img,
+                                    type: 'movie',
+                                    plugin: plugin_name
+                                });
+                            }
                         });
 
                         call(items);
@@ -36,18 +37,21 @@
                     });
             },
 
-            // відкриття посилання (отримання відео)
+            // Відкриття відео
             play: function(item, call){
                 fetch(item.url)
                     .then(r => r.text())
                     .then(html => {
                         let dom = new DOMParser().parseFromString(html, 'text/html');
-                        // приклад: знаходимо iframe з відео
                         let iframe = dom.querySelector('iframe')?.src;
 
-                        call({
-                            file: iframe
-                        });
+                        if(iframe){
+                            call({
+                                file: iframe
+                            });
+                        } else {
+                            call(false);
+                        }
                     })
                     .catch(e => {
                         console.log('Uakino play error', e);
@@ -57,9 +61,11 @@
         });
 
         Lampa.Listener.send('app', {type:'plugin', action:'start', name: plugin_name});
+        console.log('Plugin ' + plugin_name + ' started');
     }
 
     if(window.appready) startPlugin();
     else Lampa.Listener.follow('app', function(e){ if(e.type === 'ready') startPlugin(); });
 
 })();
+
