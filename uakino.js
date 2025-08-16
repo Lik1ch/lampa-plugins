@@ -9,7 +9,7 @@
     // Register the new online parser
     Lampa.Online.register(balancer, {
         // Base URL of the site
-        url: 'https://uakino.club',
+        url: 'https://uakino.best',
 
         // Function to generate search URL
         search: function (params) {
@@ -22,13 +22,20 @@
             var cards = [];
             var $ = Lampa.$(html);
 
-            // Assuming results are in div.shortstory (common for DLE sites)
-            $('div.shortstory').each(function () {
+            // Updated selector based on typical structure
+            $('div.movie-item').each(function () {
                 var elem = $(this);
-                var link = elem.find('a.short-poster');
+                var link = elem.find('h3 a');
                 var title = link.text().trim();
                 var url = link.attr('href');
                 var poster = elem.find('img').attr('src');
+
+                var year = '';
+                var metadata = elem.find('.metadata').text();
+                if (metadata) {
+                    var match = metadata.match(/Рік виходу: (\d+)/);
+                    if (match) year = match[1];
+                }
 
                 if (title && url) {
                     if (poster && !poster.startsWith('http')) {
@@ -40,7 +47,7 @@
                     cards.push({
                         title: title,
                         original_title: title, // Can add logic for original title if needed
-                        release_year: elem.find('.short-year').text() || '', // Adjust selector if needed
+                        release_year: year,
                         poster: poster || '',
                         url: url
                     });
@@ -57,7 +64,9 @@
             var iframe = $('div.player-box iframe').attr('src') ||
                          $('iframe.player-iframe').attr('src') ||
                          $('div#player iframe').attr('src') ||
-                         $('div.player iframe').attr('src');
+                         $('div.player iframe').attr('src') ||
+                         $('div.full-video iframe').attr('src') ||
+                         $('iframe').first().attr('src'); // Fallback to first iframe
 
             if (iframe && iframe.indexOf('http') === -1) {
                 iframe = 'https:' + iframe;
@@ -71,10 +80,10 @@
     });
 
     // Add the balancer to the list of available online sources
-    var current_balancers = Lampa.Storage.get('online_balancers') || ['collaps', 'alloha', 'videocdn']; // Corrected key to 'online_balancers'
+    var current_balancers = Lampa.Storage.get('online_balancer') || ['collaps', 'alloha', 'videocdn']; // Reverted to singular key
     if (current_balancers.indexOf(balancer) === -1) {
         current_balancers.unshift(balancer);
-        Lampa.Storage.set('online_balancers', current_balancers);
+        Lampa.Storage.set('online_balancer', current_balancers);
     }
 
     console.log('Uakino plugin loaded');
