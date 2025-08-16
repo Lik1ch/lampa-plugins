@@ -1,42 +1,39 @@
-(function(){
+(function() {
     'use strict';
 
-    var plugin_name = 'Uakino-Test';
+    var network = new Lampa.Reguest();
 
-    function startPlugin(){
-        console.log('✅ Плагін ' + plugin_name + ' підключено');
+    function uakino(query, callback) {
+        var url = 'https://uakino.club/index.php?do=search&subaction=search&story=' + encodeURIComponent(query);
 
-        // Реєструємо фейковий пошук
-        Lampa.Api.add(plugin_name, {
-            search: function(query, call){
-                let results = [
-                    {
-                        title: "Тестовий фільм (" + plugin_name + ")",
-                        url: "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
-                        poster: "https://via.placeholder.com/300x450.png?text=Uakino+Test",
-                        type: "movie",
-                        plugin: plugin_name
-                    }
-                ];
-                call(results);
-            },
-            play: function(item, call){
-                call({
-                    file: item.url
-                });
-            }
-        });
+        network.clear();
+        network.native(url, function(html) {
+            var results = [];
+            var dom = $(html);
 
-        Lampa.Listener.send('app', {
-            type: 'plugin',
-            action: 'start',
-            name: plugin_name
+            dom.find('.all_entry').each(function() {
+                var item = {};
+                item.title = $(this).find('.all_entry_c .title').text().trim();
+                item.url   = $(this).find('a').attr('href');
+                item.poster= $(this).find('img').attr('src');
+                item.descr = $(this).find('.all_entry_c .text').text().trim();
+                results.push(item);
+            });
+
+            callback(results);
+        }, function(a, c) {
+            callback([]);
         });
     }
 
-    if(window.appready) startPlugin();
-    else Lampa.Listener.follow('app', function(e){
-        if(e.type === 'ready') startPlugin();
+    Lampa.Component.add('uakino', {
+        name: 'Uakino',
+        type: 'search',
+        onSearch: function(query, call) {
+            uakino(query, function(results) {
+                call(results);
+            });
+        }
     });
 
 })();
