@@ -31,12 +31,18 @@
                 var poster = elem.find('img').attr('src');
 
                 if (title && url) {
+                    if (poster && !poster.startsWith('http')) {
+                        poster = this.url + poster;
+                    }
+                    if (url && !url.startsWith('http')) {
+                        url = this.url + url;
+                    }
                     cards.push({
                         title: title,
                         original_title: title, // Can add logic for original title if needed
                         release_year: elem.find('.short-year').text() || '', // Adjust selector if needed
-                        poster: poster ? this.url + poster : '', // Ensure full URL
-                        url: url.startsWith('http') ? url : this.url + url
+                        poster: poster || '',
+                        url: url
                     });
                 }
             });
@@ -47,8 +53,11 @@
         // Function to parse movie details and get stream (iframe)
         detail: function (html) {
             var $ = Lampa.$(html);
-            // Find the iframe in the player section
-            var iframe = $('div.player-box iframe').attr('src') || $('iframe.player-iframe').attr('src');
+            // Try multiple possible selectors for the iframe
+            var iframe = $('div.player-box iframe').attr('src') ||
+                         $('iframe.player-iframe').attr('src') ||
+                         $('div#player iframe').attr('src') ||
+                         $('div.player iframe').attr('src');
 
             if (iframe && iframe.indexOf('http') === -1) {
                 iframe = 'https:' + iframe;
@@ -62,10 +71,10 @@
     });
 
     // Add the balancer to the list of available online sources
-    var current_balancers = Lampa.Storage.get('online_balancer') || ['collaps', 'alloha', 'videocdn']; // Default balancers
+    var current_balancers = Lampa.Storage.get('online_balancers') || ['collaps', 'alloha', 'videocdn']; // Corrected key to 'online_balancers'
     if (current_balancers.indexOf(balancer) === -1) {
         current_balancers.unshift(balancer);
-        Lampa.Storage.set('online_balancer', current_balancers);
+        Lampa.Storage.set('online_balancers', current_balancers);
     }
 
     console.log('Uakino plugin loaded');
